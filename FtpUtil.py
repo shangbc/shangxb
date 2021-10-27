@@ -4,8 +4,9 @@
 # Verion   1.0
 # function 默认
 from ftplib import FTP
-from IOT.FtpConnectionUtil import FtpConnectionUtil
+from FtpConnectionUtil import FtpConnectionUtil
 from StaticData import getVariable
+from MethodTools import pathJoin
 import datetime
 import re
 
@@ -27,7 +28,7 @@ class FtpUtil(FtpConnectionUtil):
             raise error
 
     # 文件检索
-    def getSearchDir(self, path, matchingRe):
+    def getSearchDir(self, path, matchingRe, inteval):
         try:
             ftp = self .ftp
             fileNum = 0
@@ -56,6 +57,9 @@ class FtpUtil(FtpConnectionUtil):
                         #     fileNum += 1
                         if matchingReCompile is not None and not matchingReCompile.search(fileName):
                             continue
+                        if inteval is not None and datetime.datetime.now() - datetime.timedelta(
+                                minutes=inteval * 2) < beginDate:
+                            continue
                         fileDict = {
                             'fileName': fileName,
                             'fileTime': beginDate
@@ -75,7 +79,7 @@ class FtpUtil(FtpConnectionUtil):
         try:
             ftp = self.ftp
             ftp .cwd(downDir)
-            locaFile = locaDir + '/' + file
+            locaFile = pathJoin(locaDir, file)
             myFile = open(locaFile, 'wb')
             fileCodeDone = "RETR " + file
             ftp.retrbinary(fileCodeDone, myFile.write)
@@ -104,7 +108,7 @@ class FtpUtil(FtpConnectionUtil):
         try:
             ftp = self.ftp
             ftp.cwd(upPath)
-            locaFile = locaDir + '/' + fileName
+            locaFile = pathJoin(locaDir, fileName)
             myFile = open(locaFile, 'rb')
             fileCodeUp = "STOR " + fileName
             ftp.storbinary(fileCodeUp, myFile)
@@ -122,5 +126,12 @@ class FtpUtil(FtpConnectionUtil):
             ftp .cwd(path)
             size = ftp .size(fileName)
             return size
+        except Exception as error:
+            raise error
+
+    def close(self):
+        try:
+            ftp = self .ftp
+            ftp .close()
         except Exception as error:
             raise error

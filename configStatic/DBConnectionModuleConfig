@@ -1,0 +1,22 @@
+# 数据源连接信息
+# 服务名      db_name
+# 端口        db_host
+# 地址        db_host
+# 用户名      db_user
+# 密码        db_password
+[DBConnectConfig]
+db_name = pcsdb5
+db_host = csdbd1.yw.zj.chinamobile.com
+db_port = 1521
+db_user = cboss
+db_password = cboss
+
+[StaticConfigData]
+default_key = ConfigCompare
+
+# 日志配置信息
+[LoggingConfig]
+logging_path = E:\程序\pyhton\shangxb\logs\
+logging_encoding = utf_8
+logging_level = debug
+logging_formatter = %(asctime)s - %(name)s - %(levelname)8s - %(threadName)s - %(message)s

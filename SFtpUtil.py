@@ -3,11 +3,13 @@
 # ide      PyCharm
 # Verion   1.0
 # function 默认
-from IOT.FtpConnectionUtil import FtpConnectionUtil
+from FtpConnectionUtil import FtpConnectionUtil
 from StaticData import getVariable
+from MethodTools import pathJoin
 import datetime
 import re
 import stat
+import os
 import paramiko
 
 
@@ -15,6 +17,7 @@ class SFtpUtil(FtpConnectionUtil):
     def __init__(self, host, port, username, password):
         try:
             self .loggers = getVariable('loggers')
+            self.loggers.info('开始连接sftp：{host}'.format(host=host))
             client = paramiko.SSHClient()  # 获取SSHClient实例
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             client.connect(host, username=username, password=password, port=port)  # 连接SSH服务端
@@ -31,7 +34,7 @@ class SFtpUtil(FtpConnectionUtil):
             raise error
 
     # 文件检索
-    def getSearchDir(self, path, matchingRe):
+    def getSearchDir(self, path, matchingRe, inteval):
         try:
             sftp = self .sftp
             fileNum = 0
@@ -46,6 +49,13 @@ class SFtpUtil(FtpConnectionUtil):
                 else:
                     fileTime = datetime.datetime.fromtimestamp(dirFile.st_mtime)
                     fileName = dirFile.filename
+                    if matchingReCompile is not None and not matchingReCompile.search(fileName):
+                        continue
+                    self.loggers.error(fileTime)
+                    self .loggers .error(fileName)
+                    if inteval is not None and datetime.datetime.now() - datetime.timedelta(
+                            minutes=inteval * 2) < fileTime:
+                        continue
                     fileDict = {
                         'fileName': fileName,
                         'fileTime': fileTime
@@ -61,8 +71,8 @@ class SFtpUtil(FtpConnectionUtil):
     def fileDown(self, locaDir, downDir, file):
         try:
             sftp = self .sftp
-            locaFile = locaDir + '/' + file
-            downFile = downDir + '/' + file
+            locaFile = pathJoin(locaDir, file)
+            downFile = pathJoin(downDir, file)
             sftp .get(downFile, locaFile)
 
         except Exception as error:
@@ -75,7 +85,7 @@ class SFtpUtil(FtpConnectionUtil):
     def fileDelete(self, deleteDir, file):
         try:
             sftp = self.sftp
-            fileName = deleteDir + '/' + file
+            fileName = pathJoin(deleteDir, file)
             sftp .remove(fileName)
         except Exception as error:
             self .loggers .error(file + "删除失败！")
@@ -87,8 +97,8 @@ class SFtpUtil(FtpConnectionUtil):
     def fileUp(self, locaDir, upPath, fileName):
         try:
             sftp = self.sftp
-            locaFile = locaDir + '/' + fileName
-            upFile = upPath + '/' + fileName
+            locaFile = pathJoin(locaDir, fileName)
+            upFile = pathJoin(upPath, fileName)
             sftp .put(locaFile, upFile)
         except Exception as error:
             self .loggers .error(fileName + "上传失败！")
@@ -99,8 +109,17 @@ class SFtpUtil(FtpConnectionUtil):
     def getFilesize(self, path, fileName):
         try:
             sftp = self .sftp
-            file = path + '/' + fileName
+            file = pathJoin(path, fileName)
             size = sftp .stat(file) .st_size
             return size
+        except Exception as error:
+            raise error
+
+    def close(self):
+        try:
+            sftp = self .sftp
+            client = self .client
+            sftp .close()
+            client .close()
         except Exception as error:
             raise error

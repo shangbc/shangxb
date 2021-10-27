@@ -11,7 +11,7 @@ from StaticData import setVariable
 def getStaticConfig():
     try:
         # 配置文件的路径
-        configurationFile = "E:/程序/pyhton/automation/src/configStatic/DBConnectionModuleConfig"
+        configurationFile = "E:/程序/pyhton/shangxb/configStatic/DBConnectionModuleConfig"
 
         # 判断文件是否存在
         fileBool = os.path.isfile(configurationFile)

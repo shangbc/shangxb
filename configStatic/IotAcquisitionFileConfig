@@ -1,0 +1,7 @@
+# 日志前缀
+[LOGGING]
+fileName = IotAcquisitionFile
+
+# 程序配置名
+[PROGRAM]
+programName = IotAcquisitionFile

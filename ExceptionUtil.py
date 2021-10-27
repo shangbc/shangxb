@@ -85,7 +85,7 @@ class PythonConfigCbossDataException(Exception):
         self.errorStr = errorStr
 
     def __str__(self):
-        exceptionStr = "PythonConfigCbossDataException：{}在配置表python_config_cboss中没有数据！！".format(self.errorStr)
+        exceptionStr = "PythonConfigCbossDataException：{}在配置表program_sourct_config中没有数据！！".format(self.errorStr)
         return exceptionStr
 
 

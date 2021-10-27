@@ -58,3 +58,9 @@ def getConfigFile(path):
         return config
     except Exception as error:
         raise error
+
+
+def pathJoin(a, *paths):
+    path = os .path .join(a, *paths)
+    path = path .replace('\\', '/')
+    return path

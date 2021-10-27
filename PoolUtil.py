@@ -25,6 +25,7 @@ class PoolUtil(object):
         try:
             conn = self.__connection
             cursor = self.__cursor
+
             cursor.execute(sql, *args)
             df = None
             if args.__len__() != 0:
@@ -91,8 +92,6 @@ class PoolUtil(object):
         try:
             cursor = self.__cursor
             cursor .execute(sql, *args)
-            insertCount = cursor .rowcount
-            self .loggers .info('清空sql影响的记录数为：' + str(insertCount))
         except Oracle .DatabaseError as databaseerror:
             raise databaseerror
         except Exception as error:
