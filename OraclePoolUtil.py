@@ -27,7 +27,6 @@ class OraclePoolUtil(PoolUtil):
     # @sqlAnalysis('all')
     def insertMany(self, table, *args):
         dataList = args[0]
-        print(dataList)
         df, nameList, columnList = manyDataExec(dataList)
         # 统一用字段名作为预占符
         # state  0  采用Oracle的预占方式  1采用mysql的预占方式

@@ -1,0 +1,15 @@
+# 所在主机识别
+[HOST]
+ip = 10.78.145.56
+
+# 任务执行的时间
+[CRONTAB]
+crontab = */1 * * * *
+
+# 日志前缀
+[LOGGING]
+fileName = FileDownloadMonitoring
+
+# 程序配置名
+[PROGRAM]
+programName = FileDownloadMonitoring

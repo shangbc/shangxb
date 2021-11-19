@@ -43,7 +43,7 @@ def getDbSourctConnStaticConfig():
         connect = pool.connection()
         cursor = connect.cursor()
         sourcSql = """
-                   select * from Db_Sourct_Conn_Config t
+                   select * from cboss.Db_Sourct_Conn_Config t
                    """
 
         # 获取全部配置数据
@@ -168,7 +168,7 @@ class ToolTemplate:
 
     def getConfigKeyData(self, pythonCode):
         configKeySql = """
-                       select * from program_sourct_config t
+                       select * from cboss.program_sourct_config t
                        where t.python_code = :pythonCode
                              and t.config_state = 'U'
                        """

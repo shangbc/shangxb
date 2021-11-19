@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import logging
+import traceback
 
 from Decorator import loggerSourceCut
 from MethodTools import keyBoolen
@@ -16,13 +17,22 @@ class LoggingConfigUtil:
     # 初始化时设置默认的格式
     def __init__(self, loggingFileName=None):
         try:
+            self .loggingFileName = loggingFileName
+            self .setLogger()
+        except Exception as exceptionError:
+            raise exceptionError
+
+    # 切换日志实例
+    def setLogger(self, level=None):
+        try:
+            loggingFileName = self .loggingFileName
             staticConfig = getVariable('staticConfig')
             # 获取当前信息
             os.chdir(sys.path[0])
             localTime = time.strftime("%Y-%m-%d", time.localtime())
 
             # 获取配置文件中的信息
-            loggingConfig = staticConfig. items('LoggingConfig')
+            loggingConfig = staticConfig.items('LoggingConfig')
             loggingConfig = dict(loggingConfig)
             loggingPath = keyBoolen('logging_path', loggingConfig)
             loggingEncoding = keyBoolen('logging_encoding', loggingConfig)
@@ -38,12 +48,13 @@ class LoggingConfigUtil:
                 'critical': logging.CRITICAL,
                 'fatal': logging.FATAL
             }
-            loggingLevel = levelDict[loggingLevel]
+            loggingLevel = levelDict[level if level is not None else loggingLevel]
 
             # 屏幕输出和日志输出设置
             logger = logging.getLogger()
             logger.setLevel(loggingLevel)
-            logfile = loggingPath + ('' if loggingFileName is None else (loggingFileName + '-')) + str(localTime) + '.log'
+            logfile = loggingPath + ('' if loggingFileName is None else (loggingFileName + '-')) + str(
+                localTime) + '.log'
             formatter = logging.Formatter(loggingFormatter)
 
             # 日志输出配置
@@ -72,10 +83,6 @@ class LoggingConfigUtil:
         except Exception as exceptionError:
             raise exceptionError
 
-    # 切换日志实例
-    def setLogger(self):
-        pass
-
     @loggerSourceCut
     def debug(self, msg, *args, **kwargs):
         logs = self.logs
@@ -92,12 +99,14 @@ class LoggingConfigUtil:
     def warning(self, msg, *args, **kwargs):
         logs = self.logs
         logs .warning(msg, *args, **kwargs)
+        logs .warning(traceback.format_exc())
 
     # error
     @loggerSourceCut
     def error(self, msg, *args, **kwargs):
         logs = self.logs
         logs.error(msg, *args, **kwargs)
+        logs.error(traceback.format_exc())
 
     # CRITICAL
     @loggerSourceCut

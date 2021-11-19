@@ -19,6 +19,7 @@ import threading
 import queue
 import multiprocessing
 import shutil
+import logging
 
 matchingStrDict = {
     '$DATE': '[0-9]{4,14}',
@@ -33,11 +34,11 @@ def getFileDownloadData(db):
         'host': ip
     }
     fileDownloadSql = """
-                      select * from ftp_download_config t
+                      select * from bossmdy.ftp_download_config t
                       where t.host = :host
                             and t.state = 'U'
                       """
-    fileDownloadData = db .select('cboss', fileDownloadSql, sqlDict)
+    fileDownloadData = db.select('cboss', fileDownloadSql, sqlDict)
     return fileDownloadData
 
 
@@ -46,10 +47,10 @@ def getFtpFileDef(db, fileType):
         'file_type': fileType
     }
     ftpFileDefSql = """
-                      select * from ftp_file_def t
+                      select * from cboss.ftp_file_def t
                       where t.file_type = :file_type
                       """
-    ftpFileDefData = db .select('cboss', ftpFileDefSql, dictStr)
+    ftpFileDefData = db.select('cboss', ftpFileDefSql, dictStr)
     return ftpFileDefData
 
 
@@ -58,7 +59,7 @@ def getFtpGroupDef(db, groupId):
         'group_id': groupId
     }
     ftpGroupDefSql = """
-                      select * from ftp_group_def t
+                      select * from cboss.ftp_group_def t
                       where t.group_id = :group_id
                       """
     ftpGroupDefData = db.select('cboss', ftpGroupDefSql, dictStr)
@@ -72,7 +73,7 @@ def getFtpFileDownLogs(db, fileType, fileWay, Interval):
         'fileWay': fileWay
     }
     ftpFileDefSql = """
-                    select * from ftp_file_interface t
+                    select * from cboss.ftp_file_interface t
                     where t.file_type = :file_type
                           and t.file_way = :fileWay
                           and t.create_date > sysdate - :Interval/1440
@@ -89,7 +90,7 @@ def getFtpFileDownLog(db, fileType, fileName, fileWay):
         'file_way': fileWay
     }
     ftpFileDefSql = """
-                        select * from ftp_file_interface t
+                        select * from cboss.ftp_file_interface t
                         where t.file_name = :file_name
                               and t.file_way = :file_way
                               and t.file_type = :file_type
@@ -102,37 +103,43 @@ def getFtpFileDownLog(db, fileType, fileName, fileWay):
 def getLocaFile(locaPath, matchingRe=None, inteval=None):
     fileList = []
     matchingReCompile = re.compile(matchingRe) if matchingRe is not None else None
-    for file in os .listdir(locaPath):
-        if matchingReCompile is not None and not matchingReCompile.search(file):
-            continue
-        fileName = pathJoin(locaPath, file)
-        fileTime = time .ctime(os.path.getmtime(fileName))
-        fileTime = datetime .datetime .strptime(fileTime, "%a %b %d %H:%M:%S %Y")
-        if inteval is not None and datetime .datetime .now() - datetime .timedelta(minutes=inteval*2) < fileTime:
-            continue
-        fileList .append({
-            'fileName': file,
-            'fileTime': fileTime
+    for file in os.listdir(locaPath):
+        try:
+            if matchingReCompile is not None and not matchingReCompile.search(file):
+                continue
+            fileName = pathJoin(locaPath, file)
+            if os .path .isdir(fileName):
+                continue
+            fileTime = time.ctime(os.path.getmtime(fileName))
+            fileTime = datetime.datetime.strptime(fileTime, "%a %b %d %H:%M:%S %Y")
+            if inteval is not None and datetime.datetime.now() - datetime.timedelta(minutes=inteval * 2) < fileTime:
+                continue
+            fileList.append({
+                'fileName': file,
+                'fileTime': fileTime
             })
+        except Exception as error:
+            logging .error(error)
     return fileList
 
 
 # 线程类
 class FileExceThreading(threading.Thread):
     def __init__(self, number, tool):
-        threading .Thread .__init__(self)
-        self .__threadName = 'Threading-{number}' .format(number=number)
-        self .__tool = tool
+        threading.Thread.__init__(self)
+        self .setName('Threading-'+ str(number))
+        self.__threadName = 'Threading-{number}'.format(number=number)
+        self.__tool = tool
 
     def run(self):
         global threadState
-        loggers = self .__tool .getLoggers()
-        db = self .__tool .getDbSourct()
+        loggers = self.__tool.getLoggers()
+        db = self.__tool.getDbSourct()
         while threadState:
-            threadLock .acquire()
-            if not threadQueue .empty():
-                fileData = threadQueue .get()
-                threadLock .release()
+            threadLock.acquire()
+            if not threadQueue.empty():
+                fileData = threadQueue.get()
+                threadLock.release()
                 try:
                     fileType = fileData['FILE_TYPE']
                     taskType = fileData['TASK_TYPE']
@@ -218,6 +225,14 @@ class FileExceThreading(threading.Thread):
                             fileDownLog = getFtpFileDownLog(db, fileType, fileName, str(fileWay))
                             if len(fileDownLog) != 0 and ignoreLog != 'U':
                                 loggers.debug(fileName + '已有操作记录')
+                                # 判断文件是否需要移his
+                                if hisPath is not None and fileWay == 0:
+                                    locaFileName = pathJoin(localPath, fileName)
+                                    locaHisFileName = pathJoin(hisPath, fileName)
+                                    if os.path.exists(locaHisFileName):
+                                        os.remove(locaHisFileName)
+                                    shutil.move(locaFileName, hisPath)
+                                    loggers.debug(fileName + '：移动到his目录下')
                                 continue
 
                             # 文件上传/下载并记录到表里
@@ -229,7 +244,8 @@ class FileExceThreading(threading.Thread):
                             else:
                                 FtpConnectionUtil.exceFileUp(ftp, localPath, remotePath, fileName)
                                 locaFileName = pathJoin(localPath, fileName)
-                                fileSize = pathJoin(locaFileName)
+                                # 获取上传文件的大小
+                                fileSize = os .path .getsize(locaFileName)
                             fileDownLogDict = [{
                                 'file_type': fileType,
                                 'file_name': fileName,
@@ -244,6 +260,9 @@ class FileExceThreading(threading.Thread):
                             if len(fileDownLog) == 0:
                                 db.insertMany('cboss', 'cboss.ftp_file_interface', fileDownLogDict)
 
+                            # 记录到保障表中  bossmdy.ftp_file_interface_guarantee
+                            db.insertMany('cboss', 'bossmdy.ftp_file_interface_guarantee', fileDownLogDict)
+
                             # 判断文件是否需要删除
                             if fileWay == 1 and deleteState is not None and int(deleteState) == 1:
                                 FtpConnectionUtil.exceFileDelete(ftp, remotePath, fileName)
@@ -251,11 +270,30 @@ class FileExceThreading(threading.Thread):
                             # 判断文件是否需要移his
                             if hisPath is not None and fileWay == 0:
                                 locaFileName = pathJoin(localPath, fileName)
-                                shutil .move(locaFileName, hisPath)
-                                loggers .debug(fileName + '：移动到his目录下')
+                                locaHisFileName = pathJoin(hisPath, fileName)
+                                if os.path.exists(locaHisFileName):
+                                    os.remove(locaHisFileName)
+                                shutil.move(locaFileName, hisPath)
+                                loggers.debug(fileName + '：移动到his目录下')
                         except Exception as error:
                             loggers.error(error, exc_info=True)
                             db.rollback()
+                            try:
+                                fileDownLogDict = [{
+                                    'file_type': fileType,
+                                    'file_name': fileName,
+                                    'proc_status': 0,
+                                    'create_date': datetime.datetime.now(),
+                                    'file_way': fileWay,
+                                    'notes': ('直接下载' if fileWay == 1 else '直接上传') + '失败',
+                                    'ext1': 0
+                                }]
+                                db .insertMany('cboss', 'bossmdy.ftp_file_interface_error', fileDownLogDict)
+                            except Exception as error:
+                                loggers .error(error)
+                                db.rollback()
+                            else:
+                                db.commit()
                         else:
                             db.commit()
                 except Exception as error:
@@ -265,11 +303,15 @@ class FileExceThreading(threading.Thread):
                         FtpConnectionUtil.close(ftp)
             else:
                 threadState = False
-                threadLock .release()
-        db .close()
+                threadLock.release()
+        db.close()
 
 
 def exce():
+    global threadState, threadQueue, threadLock
+    threadState = True
+    threadQueue = queue.Queue()
+
     # 获取工具配置
     tool = ToolTemplate(dataSourctName=programName, logginFileName=loggingFileName)
     db = tool.getDbSourct()
@@ -289,25 +331,22 @@ def exce():
     loggers.info('创建线程')
     for index in range(thredingMax):
         myThreding = FileExceThreading(index, tool)
-        thredingList .append(myThreding)
+        thredingList.append(myThreding)
 
     # 启动线程
-    loggers .info('启动线程')
+    loggers.info('启动线程')
     for thread in thredingList:
-        thread .start()
+        thread.start()
 
     #
     for thread in thredingList:
-        thread .join()
-
-
-
+        thread.join()
 
 
 if __name__ == '__main__':
     # FileDownloadMonitoring
-    configFilepath = 'E:/程序/pyhton/automation/src/configStatic/FileDownloadMonitoring'
-    # configFilepath = '/app/cbapp/program/config/FtpProcessMonitoring'
+    # configFilepath = 'E:/程序/pyhton/automation/src/configStatic/FileDownloadMonitoring'
+    configFilepath = '/app/cbapp/program/config/FileDownloadMonitoring'
     configData = getConfigFile(configFilepath)
 
     # 获取文件执行的主机ip
@@ -315,8 +354,8 @@ if __name__ == '__main__':
     ip = hostDesc['ip']
 
     threadState = True
-    threadQueue = queue .Queue()
-    threadLock = threading .Lock()
+    threadQueue = queue.Queue()
+    threadLock = threading.Lock()
 
     crontabDesc = dict(configData.items('CRONTAB'))
     crontab = crontabDesc['crontab']
@@ -331,5 +370,5 @@ if __name__ == '__main__':
 
     scheduler.add_job(exce, CronTrigger.from_crontab(crontab))
 
-    # scheduler.start()
-    exce()
+    scheduler.start()
+    # exce()

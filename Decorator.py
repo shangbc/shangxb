@@ -51,14 +51,14 @@ def sqlExecutePrint(executeType):
             try:
                 logStr = "2021-08-20 12:00:05,150 - root -  - "
                 logStr = "\n" + " " * (len(logStr) + 8)
-                sql = '\n' + sql .strip()
-                sqlStr = re .sub(r'[\t]+', '\t', sql)
+                sqlStr = '\n' + sql .strip()
+                sqlStr = re .sub(r'[\t]+', '\t', sqlStr)
                 sqlStr = re .sub(r'[ ]+', ' ', sqlStr)
                 sqlStr = sqlStr .replace('\n ', '\n') .replace('\n', '', 1)
                 sqlStr = re .sub(r'[\n]', logStr, sqlStr)
                 loggers = getVariable('loggers')
                 loggers .info(executeTypeStr + "开始执行")
-                loggers.debug(sqlStr)
+                loggers .debug(sqlStr)
                 if args.__len__() != 0:
                     loggers .debug("sql入参为：" + args.__str__())
                 result = fun(self, sql, *args)
@@ -66,6 +66,7 @@ def sqlExecutePrint(executeType):
                 return result
             except Exception as exceptionError:
                 loggers .error(executeTypeStr + "执行异常")
+                loggers .error(sqlStr)
                 raise exceptionError
         return wrap
     return sqlExecute

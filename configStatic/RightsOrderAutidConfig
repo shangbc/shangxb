@@ -1,0 +1,11 @@
+# 日志前缀
+[LOGGING]
+fileName = RightsOrderAutid
+
+# 程序配置名
+[PROGRAM]
+programName = RightsOrderAutid
+
+# 任务执行的时间
+[CRONTAB]
+crontab = */2 * * * *

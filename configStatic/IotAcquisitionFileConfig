@@ -5,3 +5,13 @@ fileName = IotAcquisitionFile
 # 程序配置名
 [PROGRAM]
 programName = IotAcquisitionFile
+
+# 文件配置
+[File]
+fileName = QWCX_batchCancelSync_{createTime}_BOSS571.C{serial}
+maxCounts = 10000
+filePath = C:\\Users\\Lenovo\\Desktop\\iot\\
+
+# 任务执行的时间
+[CRONTAB]
+crontab = */2 * * * *
