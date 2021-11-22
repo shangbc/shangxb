@@ -267,8 +267,8 @@ class ProductionTheading(threading.Thread):
             if theadingState:
                 getAcquisitionData()
             else:
-                loggers .info('消费者还在处理数据，休眠10s')
-                time .sleep(10)
+                loggers .info('消费者还在处理数据，休眠60s')
+                time .sleep(60)
 
 
 # 消费者
