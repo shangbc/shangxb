@@ -94,12 +94,14 @@ class SFtpUtil(FtpConnectionUtil):
             self.loggers.info(file + "删除成功！")
 
     # 文件上传
+    # 默认情况下， pysftp.Connection.put会验证通过检查目标文件的大小来上传.如果服务器端进程设法过快地删除文件，则读取文件大小将失败.
+    # 您可以通过将confirm参数设置为False来禁用上传后检查:
     def fileUp(self, locaDir, upPath, fileName):
         try:
             sftp = self.sftp
             locaFile = pathJoin(locaDir, fileName)
             upFile = pathJoin(upPath, fileName)
-            sftp .put(locaFile, upFile)
+            sftp .put(locaFile, upFile, confirm=False)
         except Exception as error:
             self .loggers .error(fileName + "上传失败！")
             raise error
