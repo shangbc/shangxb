@@ -11,6 +11,7 @@ import traceback
 from Decorator import loggerSourceCut
 from MethodTools import keyBoolen
 from StaticData import getVariable, setVariable
+from logging .handlers import TimedRotatingFileHandler
 
 
 class LoggingConfigUtil:
@@ -53,14 +54,20 @@ class LoggingConfigUtil:
             # 屏幕输出和日志输出设置
             logger = logging.getLogger()
             logger.setLevel(loggingLevel)
-            logfile = loggingPath + ('' if loggingFileName is None else (loggingFileName + '-')) + str(
-                localTime) + '.log'
-            formatter = logging.Formatter(loggingFormatter)
+            # logfile = loggingPath + ('' if loggingFileName is None else (loggingFileName + '-')) + str(
+            #     localTime) + '.log'
+            logfile = loggingPath + ('' if loggingFileName is None else (loggingFileName))
+            formatter = logging .Formatter(loggingFormatter)
 
             # 日志输出配置
-            fh = logging.FileHandler(logfile, mode='a', encoding=loggingEncoding)
-            fh.setLevel(loggingLevel)
-            fh.setFormatter(formatter)
+            # fh = logging.FileHandler(logfile, mode='a', encoding=loggingEncoding)
+            # fh.setLevel(loggingLevel)
+            # fh.setFormatter(formatter)
+            timeHandler = TimedRotatingFileHandler(filename=logfile, when='D')
+            timeHandler .setLevel(loggingLevel)
+            timeHandler .setFormatter(formatter)
+
+            timeHandler .suffix = "%Y-%m-%d.log"
 
             # 屏幕输出设置
             ch = logging.StreamHandler()
@@ -72,8 +79,9 @@ class LoggingConfigUtil:
                 logger.removeHandler(h)
 
             # 添加新的日志设置
-            logger.addHandler(fh)
-            logger.addHandler(ch)
+            # logger.addHandler(fh)
+            logger .addHandler(timeHandler)
+            logger .addHandler(ch)
 
             self.logger = logger
             self.logs = None
