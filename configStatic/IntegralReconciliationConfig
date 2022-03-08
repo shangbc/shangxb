@@ -1,0 +1,18 @@
+# UnsubscribeRequests
+
+# 日志前缀
+[LOGGING]
+fileName = IntegralReconciliation
+
+# 程序配置名
+[PROGRAM]
+programName = IntegralReconciliation
+
+# 任务执行的时间
+[CRONTAB]
+crontab = */5 * * * *
+
+[CONFIG]
+environment = cboss
+timing = true
+level = info

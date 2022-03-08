@@ -63,7 +63,7 @@ class LoggingConfigUtil:
             # fh = logging.FileHandler(logfile, mode='a', encoding=loggingEncoding)
             # fh.setLevel(loggingLevel)
             # fh.setFormatter(formatter)
-            timeHandler = TimedRotatingFileHandler(filename=logfile, when='D')
+            timeHandler = TimedRotatingFileHandler(filename=logfile, when='MIDNIGHT', interval=1, backupCount=0, encoding='utf-8')
             timeHandler .setLevel(loggingLevel)
             timeHandler .setFormatter(formatter)
 

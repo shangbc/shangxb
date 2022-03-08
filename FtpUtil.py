@@ -20,7 +20,7 @@ class FtpUtil(FtpConnectionUtil):
             # ftp.set_debuglevel(2)
             ftp.connect(host, port, timeout=60)
             ftp.encoding = 'utf-8'
-            ftp.set_pasv(False)
+            ftp.set_pasv(True)
             ftp.login(username, password)
             self .ftp = ftp
             self .loggers .info('连接{host}成功'.format(host=host))
@@ -50,7 +50,7 @@ class FtpUtil(FtpConnectionUtil):
                         dir_t = L[4] + L[5] + L[6] + L[7] + '-' + L[8] + L[9] + '-' + L[10] + L[11] + ' ' + L[12] + L[
                             13] + ':' + L[14] + L[
                                     15] + ':' + L[16] + L[17]
-                        beginDate = datetime.datetime.strptime(dir_t, "%Y-%m-%d %H:%M:%S")
+                        beginDate = datetime.datetime.strptime(dir_t, "%Y-%m-%d %H:%M:%S") + datetime .timedelta(hours=8)
                         self .loggers .debug("当前检索的文件：" + path + "/" + fileName)
                         # print("当前检索的文件：" + path + "/" + fileName)
                         # if deleteTime > beginDate:
@@ -96,8 +96,8 @@ class FtpUtil(FtpConnectionUtil):
     def fileDelete(self, deleteDir, file):
         try:
             ftp = self.ftp
-            ftp.cwd(deleteDir)
-            ftp.delete(file)
+            ftp .cwd(deleteDir)
+            ftp .delete(file)
         except Exception as error:
             raise error
         else:

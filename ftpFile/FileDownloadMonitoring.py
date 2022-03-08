@@ -110,7 +110,7 @@ def getLocaFile(locaPath, matchingRe=None, inteval=None):
             fileName = pathJoin(locaPath, file)
             if os .path .isdir(fileName):
                 continue
-            fileTime = time.ctime(os.path.getmtime(fileName))
+            fileTime = time.atime(os.path.getatime(fileName))
             fileTime = datetime.datetime.strptime(fileTime, "%a %b %d %H:%M:%S %Y")
             if inteval is not None and datetime.datetime.now() - datetime.timedelta(minutes=inteval * 2) < fileTime:
                 continue

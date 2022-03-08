@@ -1,10 +1,10 @@
 # 日志前缀
 [LOGGING]
-fileName = RightsOrderAutid
+fileName = OrderingRelationshipSync
 
 # 程序配置名
 [PROGRAM]
-programName = RightsOrderAutid
+programName = OrderingRelationshipSync
 
 # 任务执行的时间
 [CRONTAB]

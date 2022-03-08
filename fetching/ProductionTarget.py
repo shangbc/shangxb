@@ -7,6 +7,8 @@ import sys
 import datetime
 import pymysql
 import uuid
+import copy
+import cx_Oracle
 import pandas as pd
 import threading
 import queue
@@ -20,15 +22,17 @@ threaingMax = 10
 targetQueue = queue .Queue()
 targetLock = threading .Lock()
 
+user = "bossmdy"
+
 
 def getDataSourceMapping():
     try:
         global conDict
         getSourceSql = """
-                       select t.* from bossmdy.program_sourct_config t
+                       select t.* from {user}.program_sourct_config t
                        where t.config_state = 'U'
                              and t.python_code = '{programCode}'
-                       """ .format(programCode=programCode)
+                       """ .format(user=user, programCode=programCode)
 
         sourceDateList = ora .selectSqlExecute('cboss', getSourceSql)
 
@@ -49,10 +53,10 @@ def getDataSourceMapping():
         sourceNameList = "'" + "','" .join(sourceDict['DATASOURCE'].split(';')) + "'"
 
         getMapSql = """
-                    select t.*,rowid from bossmdy.Data_source_mapping t
+                    select t.*,rowid from {user}.Data_source_mapping t
                     where t.map_name in ({sourceNameList})
                           and t.state = 'U'
-                    """ .format(sourceNameList = sourceNameList)
+                    """ .format(user=user, sourceNameList = sourceNameList)
         mapDataList = ora .selectSqlExecute('cboss', getMapSql)
 
         mapList = []
@@ -75,13 +79,20 @@ def getTargetIndexData():
     db = OraclePolls(mapList, logging)
     while targetState:
         try:
+            targetLock.acquire()
             if targetQueue .empty():
                 targetState = False
                 break
-            targetLock .acquire()
+            # targetLock .acquire()
             target = targetQueue .get()
-            targetLock .release()
-            sqlDesc = target['SQL_DESC'] .read()
+            # targetLock .release()
+
+            logging.info(target)
+
+            sqlDesc = target['SQL_DESC']
+            logging .info(type(sqlDesc))
+            if isinstance(sqlDesc, cx_Oracle.LOB):
+                sqlDesc = sqlDesc .read()
             lastTime = target['LAST_TIME']
             timeRange = int(target['TIME_RANGE'])
             dataSource = target['DATA_SOURCE']
@@ -93,13 +104,19 @@ def getTargetIndexData():
             if endTime > nowTime:
                 logging .info("最后执行时间大于当前时间，等待下次执行")
                 continue
+            else:
+                # targetLock .acquire()
+                targetNext = copy .deepcopy(target)
+                targetNext['LAST_TIME'] = endTime
+                targetQueue .put(targetNext)
+                targetState = True
+                # targetLock .release()
 
             # logging .info(sqlDesc)
-            logging .info("开始时间为："+ startTime .__str__())
+            logging .info("开始时间为：" + startTime .__str__())
             logging.info("结束时间为：" + endTime.__str__())
 
             logging .info(lastTime)
-            logging.info(target)
 
             endTimeStr = "to_date('{endTime}', 'yyyy-mm-dd hh24:mi:ss')" .format(endTime=endTime .strftime('%Y-%m-%d %H:%M:%S'))
             startTimeStr = "to_date('{startTime}', 'yyyy-mm-dd hh24:mi:ss')".format(startTime=startTime.strftime('%Y-%m-%d %H:%M:%S'))
@@ -127,15 +144,15 @@ def getTargetIndexData():
                 executeDescList .append(executeDesc)
                 logging .info(executeDesc)
 
-            db .batchInsertAll('cboss', 'bossmdy.target_log_desc', executeDescList)
+            db .batchInsertAll('cboss', '{user}.target_log_desc' .format(user=user), executeDescList)
 
 
             updateSql = """
-                        update  bossmdy.target_sql_config t
+                        update  {user}.target_sql_config t
                         set t.last_time = [:last_time]
                         where t.identification = '[:identification]'
                               and t.threshold = '[:threshold]'
-                        """
+                        """ .format(user=user)
             updateDict = {
                 'last_time': "to_date('{endTime}', 'yyyy-mm-dd hh24:mi:ss')" .format(endTime=endTime .strftime('%Y-%m-%d %H:%M:%S')),
                 'identification': target['IDENTIFICATION'],
@@ -148,15 +165,17 @@ def getTargetIndexData():
 
         else:
             db .dataCommit()
+        finally:
+            targetLock .release()
 
     db .dataClose()
 
 
 def getTargetSqlData():
     getTargeSql = """
-                  select t.* from bossmdy.target_sql_config t
+                  select t.* from {user}.target_sql_config t
                   where t.state = 'U'
-                  """
+                  """ .format(user=user)
     getTargeData = ora .selectSqlExecute('cboss', getTargeSql)
     if len(getTargeData) == 0:
         return None

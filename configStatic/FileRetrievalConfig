@@ -1,0 +1,17 @@
+# 日志前缀
+[LOGGING]
+fileName = FileRetrieval
+
+# 程序配置名
+[PROGRAM]
+programName = FileRetrieval
+
+# 任务执行的时间
+[CRONTAB]
+crontab = */1 * * * *
+
+[CONFIG]
+environment = test
+timing = fales
+level = debug
+thread_nun_max = 1

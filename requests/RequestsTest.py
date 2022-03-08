@@ -1,9 +1,3 @@
-# Time     2021/11/08 10::08
-# Auhtor   
-# ide      PyCharm
-# Verion   1.0
-# function 默认
-
 import datetime
 import requests
 import json
@@ -17,8 +11,10 @@ import logging
 #     "Content-Type": "application/json;charset=utf-8"
 # }
 id = str(uuid.uuid1()) .replace("-", "")
+print(id)
 
 timeStr = datetime .datetime .now() .strftime("%Y%m%d%H%M%S")
+print(timeStr)
 
 headers = {
     "domain": "CMCOP",
@@ -31,7 +27,6 @@ headers = {
     "timeStamp": timeStr
 }
 
-
 # 获取连接
 def getRequestContent(requestUrl, requestData):
     try:
@@ -41,16 +36,16 @@ def getRequestContent(requestUrl, requestData):
         # 提取接口返回的数据
         requestsTextStr = requestsContent .text
         # 返回的是一个字符串的数据,转换为字典类型
+        print(requestsTextStr)
         requestsTextJson = json .loads(requestsTextStr)
         return requestsTextJson
     except Exception as error:
         raise error
 
-
 # 获取接口返回的数据
 def getRequestContext():
     try:
-        url = "http://10.254.50.252:3911/v3"
+        url = "http://esbhttp.zj.chinamobile.com:20110/callback"
         # data = {
         #     "endDate": "",
         #     "startDate": "",
@@ -61,13 +56,15 @@ def getRequestContext():
         #     "number": "13587851710"
         # }
         data = {
-            "number": "13587851710"
+            # "endDate": "20211214",
+            # "startDate": "20201002",
+            "orderType": "02",
+            "number": "18258203457"
         }
         dataJsons = getRequestContent(url, data)
         logging .info(dataJsons)
     except Exception as error:
         raise error
-
 
 if __name__ == '__main__':
     getRequestContext()

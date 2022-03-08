@@ -1,15 +1,16 @@
 # 日志前缀
 [LOGGING]
-fileName = RightsOrderAutid
+fileName = RightsUnsubscribeAutid
 
 # 程序配置名
 [PROGRAM]
-programName = RightsOrderAutid
+programName = RightsUnsubscribeAutid
 
 # 任务执行的时间
 [CRONTAB]
 crontab = */2 * * * *
 
 [CONFIG]
-environment = cboss
+environment = test
 timing = false
+level = debug

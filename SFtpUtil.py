@@ -51,8 +51,8 @@ class SFtpUtil(FtpConnectionUtil):
                     fileName = dirFile.filename
                     if matchingReCompile is not None and not matchingReCompile.search(fileName):
                         continue
-                    self.loggers.error(fileTime)
-                    self .loggers .error(fileName)
+                    self.loggers.debug(fileTime)
+                    self .loggers .debug(fileName)
                     if inteval is not None and datetime.datetime.now() - datetime.timedelta(
                             minutes=inteval * 2) < fileTime:
                         continue
